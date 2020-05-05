@@ -21,7 +21,7 @@ class Cart extends React.Component {
     alamat: "",
     noTelp: "",
     sendCategory: "instant",
-    userId: ""
+    userName: ""
   };
 
   getCartData = () => {
@@ -35,7 +35,7 @@ class Cart extends React.Component {
         console.log(res.data);
         this.setState({ cartData: res.data });
         if(res.data.length > 0){
-          this.setState({ cartData: res.data });
+          this.setState({ userName: this.state.cartData })
         }
       })
       .catch((err) => {
@@ -139,7 +139,7 @@ class Cart extends React.Component {
   }
 
   confirmCheckout = () => {
-    const { penerima, alamat, noTelp, totalPrice, cartData, sendCategory, userId } = this.state
+    const { penerima, alamat, noTelp, totalPrice, cartData, sendCategory } = this.state
     Axios.post(`${API_URL}/transactions`, {
       penerima,
       alamat,
@@ -147,7 +147,8 @@ class Cart extends React.Component {
       status: "Pending",
       sendCategory,
       totalPrice: this.priceWithSend(),
-      userId,
+      userName : this.props.user.username,
+      userId: this.props.user.id
       // cartData,
     })
     .then(res => {
@@ -155,10 +156,12 @@ class Cart extends React.Component {
       this.state.cartData.map((val) => {
         Axios.post(`${API_URL}/transaction_Details`, {
           transactionId: res.data.id,
+          productName: val.product.productName,
           productId: val.productId,
           quantity: val.quantity,
           price: val.product.price,
-          totalPrice: val.quantity*val.product.price
+          category: val.product.category,
+          totalPrice: val.quantity*val.product.price,
         })
         .then(res => {
           Axios.delete(`${API_URL}/carts/${val.id}`)

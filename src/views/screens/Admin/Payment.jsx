@@ -11,6 +11,8 @@ class Cart extends React.Component {
   state = {
         pendingPayment: [],
         completePayment: [],
+        userBuyDetails: [],
+        details: false,
     };
 
     getPendingPayment = () => {
@@ -61,14 +63,14 @@ class Cart extends React.Component {
     
   renderPendingPayment = () => {
     return this.state.pendingPayment.map((val, idx) => {
-      const { totalPrice, userId } = val;
+      const { totalPrice, userName } = val;
       //const { userId } = cartData;
       return (
         <tr>
           <td>{idx + 1}</td>
-          <td>{userId}</td>
+          <td>{userName}</td>
           <td>{totalPrice}</td>
-          <td><ButtonUI>Detail</ButtonUI></td>
+          <td><ButtonUI onClick={() => {this.renderDetails(val.id)}}>Detail</ButtonUI></td>
           <td><ButtonUI type="outlined" onClick={() => this.acceptPayment(val.id)}>Confirm Payment</ButtonUI></td>
         </tr>
       );
@@ -77,18 +79,34 @@ class Cart extends React.Component {
 
   renderCompletePayment = () => {
     return this.state.completePayment.map((val, idx) => {
-      const { totalPrice, userId } = val;
+      const { totalPrice, userName } = val;
       //const { userId } = cartData;
       return (
         <tr>
           <td>{idx + 1}</td>
-          <td>{userId}</td>
+          <td>{userName}</td>
           <td>{totalPrice}</td>
-          <td><ButtonUI>Detail</ButtonUI></td>
+          <td><ButtonUI onClick={() => {this.renderDetails(val.id)}}>Detail</ButtonUI></td>
         </tr>
       );
     });
   };
+
+  renderDetails = (idx) => {
+      Axios.get(`${API_URL}/transaction_Details`,{
+          params: {
+              transactionId: idx,
+              _expand: "product",
+          }
+      })
+      .then(res => {
+          console.log(res)
+          this.setState({userBuyDetails: res.data, details: true})
+      })
+      .catch(err => {
+          console.log(err)
+      })
+  }
 
   componentDidMount() {
     this.getPendingPayment();
@@ -146,6 +164,32 @@ class Cart extends React.Component {
                 Complete Transaction is empty!
                 </Alert>
             )}
+          </div>
+          <div className="text-center">
+            <h1>Detail Pembelian User</h1>
+            <div>
+                <tr className="text-center">
+                    <td>Gambar</td>
+                    <td>Nama Produk</td>
+                    <td>Harga</td>
+                    <td>Kategori</td>
+                    <td>Deskripsi</td>
+                    <td>Jumlah Pembelian (Unit)</td>
+                </tr>
+                
+                {   this.state.details ?
+                    this.state.userBuyDetails.map((val) => {
+                        return <tr className="text-center">
+                            <td><img src={val.product.image} width="50px" height="50px"/></td>
+                            <td>{val.product.productName}</td>
+                            <td>{val.product.price}</td>
+                            <td>{val.product.category}</td>
+                            <td>{val.product.desc}</td>
+                            <td>{val.quantity} unit</td>
+                        </tr> 
+                    }) : null
+                }
+            </div>
           </div>
       </div>
     );
