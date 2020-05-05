@@ -14,7 +14,9 @@ import { faUser } from "@fortawesome/free-regular-svg-icons";
 
 import "./Navbar.css";
 import ButtonUI from "../Button/Button";
-import { logoutHandler, search } from "../../../redux/actions";
+import { logoutHandler, search, itemInCart } from "../../../redux/actions";
+import Axios from "axios";
+import { API_URL } from "../../../constants/API";
 
 const CircleBg = ({ children }) => {
   return <div className="circle-bg">{children}</div>;
@@ -25,6 +27,7 @@ class Navbar extends React.Component {
     searchBarIsFocused: false,
     searcBarInput: "",
     dropdownOpen: false,
+    cartQty: "",
   };
 
   onFocus = () => {
@@ -34,6 +37,26 @@ class Navbar extends React.Component {
   onBlur = () => {
     this.setState({ searchBarIsFocused: false });
   };
+
+  componentDidMount() {
+    // this.renderCartList()
+    this.props.itemInCart(this.props.user.id)
+  }
+
+
+  renderCartList = () => {
+    Axios.get(`${API_URL}/carts`,{
+      params: {
+        userId: this.props.user.id
+      }
+    })
+    .then((res) => {
+      this.setState({ cartQty: res.data.length })
+    })
+    .catch((err) => {
+      console.log(err)
+    })
+  }
 
   logoutBtnHandler = () => {
     this.props.onLogout();
@@ -78,18 +101,31 @@ class Navbar extends React.Component {
                   <FontAwesomeIcon icon={faUser} style={{ fontSize: 24 }} />
                   <p className="small ml-3 mr-4">{this.props.user.username}</p>
                 </DropdownToggle>
-                <DropdownMenu className="mt-2">
-                  <DropdownItem>
-                    <Link
-                      style={{ color: "inherit", textDecoration: "none" }}
-                      to="/admin/dashboard"
-                    >
-                      Dashboard
+                {
+                      this.props.user.role == "admin" ? 
+                      <DropdownMenu className="mt-2">
+                      <DropdownItem>
+                      <Link
+                        style={{ color: "inherit", textDecoration: "none" }}
+                        to="/admin/dashboard"
+                      >
+                        Dashboard
+                      </Link>
+                    </DropdownItem>
+                    <Link to="/admin/payment">
+                    <DropdownItem>Payments</DropdownItem>
                     </Link>
-                  </DropdownItem>
-                  <DropdownItem>Members</DropdownItem>
-                  <DropdownItem>Payments</DropdownItem>
-                </DropdownMenu>
+                    <Link to="/admin/report">
+                    <DropdownItem>Report</DropdownItem>
+                    </Link>
+                  </DropdownMenu> :
+                  <DropdownMenu className="mt-2">
+                    <Link to="/history">
+                    <DropdownItem>History</DropdownItem>
+                    </Link>
+                  </DropdownMenu>
+              
+                }
               </Dropdown>
               <Link
                 className="d-flex flex-row"
@@ -103,17 +139,20 @@ class Navbar extends React.Component {
                 />
                 <CircleBg>
                   <small style={{ color: "#3C64B1", fontWeight: "bold" }}>
-                    0
+                    {this.props.itemInCart}
+                    {/* {this.state.cartQty}*/this.props.user.itemInCart}
                   </small>
                 </CircleBg>
               </Link>
-              <ButtonUI
-                onClick={this.logoutBtnHandler}
-                className="ml-3"
-                type="textual"
-              >
-                Logout
-              </ButtonUI>
+              <Link to="/">
+                <ButtonUI
+                  onClick={this.logoutBtnHandler}
+                  className="ml-3"
+                  type="textual"
+                  >
+                  Logout
+                </ButtonUI>
+              </Link>
             </>
           ) : (
             <>
@@ -150,6 +189,7 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = {
   onLogout: logoutHandler,
   search,
+  itemInCart,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(Navbar);

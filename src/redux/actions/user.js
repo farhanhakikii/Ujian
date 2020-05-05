@@ -115,3 +115,22 @@ export const search = (namaitem) => {
     payload: namaitem,
   }
 }
+
+export const itemInCart = (id) => {
+  return (dispatch) => {
+    Axios.get(`${API_URL}/carts`,{
+      params: {
+        userId: id
+      }
+    })
+    .then((res) => {
+      dispatch({
+        type: "ITEM_IN_CART",
+        payload: res.data.length
+      })
+    })
+    .catch((err) => {
+      console.log(err)
+    })
+  }
+}

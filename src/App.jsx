@@ -13,13 +13,16 @@ import ProductDetails from "./views/screens/ProductDetails/ProductDetails";
 import Cart from "./views/screens/Cart/Cart";
 import AdminDashboard from "./views/screens/Admin/AdminDashboard";
 import { userKeepLogin, cookieChecker } from "./redux/actions";
+import NotFound from "./views/screens/User/NotFound";
+import History from "./views/screens/User/History";
+import Payment from "./views/screens/Admin/Payment";
 
 const cookieObj = new Cookie();
 
 class App extends React.Component {
   componentDidMount() {
     setTimeout(() => {
-      let cookieResult = cookieObj.get("authData");
+      let cookieResult = cookieObj.get("authData", {path: "/"});
       if (cookieResult) {
         this.props.keepLogin(cookieResult);
       } else {
@@ -30,7 +33,15 @@ class App extends React.Component {
 
   renderAdminRoutes = () => {
     if (this.props.user.role === "admin") {
-      return <Route exact path="/admin/dashboard" component={AdminDashboard} />;
+      return <>
+      <Route exact path="/admin/dashboard" component={AdminDashboard} />;
+      <Route exact path="/admin/payment" component={Payment} />;
+      </>
+    }else if(this.props.user.role === "user"){
+      return <>
+      <Route exact path="/admin/dashboard" component={NotFound} />;
+      <Route exact path="/admin/payment" component={NotFound} />;
+      </>
     }
   };
 
@@ -41,6 +52,7 @@ class App extends React.Component {
           <Navbar />
           <Switch>
             <Route exact path="/" component={Home} />
+            <Route exact path="/history" component={History} />
             <Route exact path="/auth" component={AuthScreen} />
             <Route
               exact
@@ -81,4 +93,19 @@ export default connect(mapStateToProps, mapDispatchToProps)(withRouter(App));
  * 4. Di cart, buat button checkout, serta dengan proses checkout - O
  * 5. Ketika confirm checkout, lakukan POST request ke db.json ke transaction
  *    -> lalu cart harus kosong - O
+ * 
+ * * TRANSACTIONS
+ * userId
+ * total belanja
+ * status -> "pending"
+ * tanggal belanja
+ * tanggal selesai -> ""
+ * 
+ * TRANSACTION_DETAILS
+ * transactionId
+ * productId
+ * price
+ * quantity
+ * totalPrice (price * quantity)
+
  */

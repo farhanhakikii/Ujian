@@ -10,15 +10,18 @@ import { API_URL } from "../../../constants/API";
 import ButtonUI from "../../components/Button/Button";
 import { Link } from "react-router-dom";
 import TextField from "../../components/TextField/TextField";
+import { itemInCart } from "../../../redux/actions"
 
 class Cart extends React.Component {
   state = {
     cartData: [],
     checkout: false,
     totalPrice: 0,
-    // penerima: "",
-    // alamat: "",
-    // noTelp: "",
+    penerima: "",
+    alamat: "",
+    noTelp: "",
+    sendCategory: "instant",
+    userId: ""
   };
 
   getCartData = () => {
@@ -31,6 +34,9 @@ class Cart extends React.Component {
       .then((res) => {
         console.log(res.data);
         this.setState({ cartData: res.data });
+        if(res.data.length > 0){
+          this.setState({ cartData: res.data });
+        }
       })
       .catch((err) => {
         console.log(err);
@@ -72,27 +78,12 @@ class Cart extends React.Component {
     Axios.delete(`${API_URL}/carts/${id}`)
       .then((res) => {
         this.getCartData();
+        this.props.itemInCart(this.props.user.id)
       })
       .catch((err) => {
         console.log(err);
       });
   };
-
-  // deleteAll = () => {
-  //   let arei = [...this.state.cartData]
-  //   alert(arei[0].userId)
-  //   Axios.delete(`${API_URL}/carts`, {
-  //     params: {
-  //       userId: 2
-  //     }
-  //   })
-  //   .then((res) => {
-  //     this.getCartData();
-  //   })
-  //   .catch((err) => {
-  //     console.log(err);
-  //   });
-  // }
 
   componentDidMount() {
     this.getCartData();
@@ -100,13 +91,18 @@ class Cart extends React.Component {
 
   activeCheckout = () => {
     this.setState({ checkout: true })
+    var total = 0
+    this.state.cartData.map((val => {
+      total += (val.quantity*val.product.price)
+    }))
+    this.setState({ totalPrice: total })
   }
   
   checkOut = () => {
     return this.state.cartData.map((val,idx) => {
       const { quantity, product } = val;
       const { productName, price } = product;
-      this.state.totalPrice += price*quantity 
+      //   
       return (
           <tr>
           <td>{idx+1}</td>
@@ -129,28 +125,58 @@ class Cart extends React.Component {
     this.setState({[field]: e.target.value})
   }
 
+  priceWithSend = () => {
+    if(this.state.sendCategory == "instant"){
+      this.setState({ totalPrice: this.state.totalPrice += 200000})
+    }else if(this.state.sendCategory == "sameday"){
+      this.setState({ totalPrice: this.state.totalPrice += 50000})
+    }else if(this.state.sendCategory == "express"){
+      this.setState({ totalPrice: this.state.totalPrice += 20000})
+    }else if(this.state.sendCategory == "sameday"){
+      this.setState({ totalPrice: this.state.totalPrice += 0})
+    }
+    return this.state.totalPrice
+  }
+
   confirmCheckout = () => {
-    const { penerima, alamat, noTelp, totalPrice, cartData } = this.state
-    alert("Transaksi Selesai")
+    const { penerima, alamat, noTelp, totalPrice, cartData, sendCategory, userId } = this.state
     Axios.post(`${API_URL}/transactions`, {
-      // penerima,
-      // alamat,
-      // noTelp,
+      penerima,
+      alamat,
+      noTelp,
       status: "Pending",
-      totalPrice: totalPrice/2,
-      cartData,
+      sendCategory,
+      totalPrice: this.priceWithSend(),
+      userId,
+      // cartData,
     })
     .then(res => {
       console.log(res)
       this.state.cartData.map((val) => {
-        Axios.delete(`${API_URL}/carts/${val.id}`)
-        .then((res) => {
-          this.getCartData();
+        Axios.post(`${API_URL}/transaction_Details`, {
+          transactionId: res.data.id,
+          productId: val.productId,
+          quantity: val.quantity,
+          price: val.product.price,
+          totalPrice: val.quantity*val.product.price
         })
-        .catch((err) => {
-          console.log(err);
-        });
+        .then(res => {
+          Axios.delete(`${API_URL}/carts/${val.id}`)
+          .then((res) => {
+            this.getCartData();
+            this.props.itemInCart(this.props.user.id)
+          })
+          .catch((err) => {
+            console.log(err);
+          });    
+          console.log(res)
+        })
+        .catch(err => {
+          console.log(err)
+        })
+
       })
+      alert(`Transaksi Selesai, Total Pembayaran: ${this.state.totalPrice}`)
     })
     .catch(err => {
       console.log(err)
@@ -183,6 +209,14 @@ class Cart extends React.Component {
               this.state.checkout ? 
               <>
               <td colSpan="5"><h1 className="text-center">Checkout</h1></td>
+              <tr>
+                <th>No.</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+              </tr>
+
               {this.checkOut()}
               <tr>
               <td colSpan="4" className="text-center">Total Price</td>
@@ -190,12 +224,21 @@ class Cart extends React.Component {
                   style: "currency",
                   currency: "IDR",
               })  .format(this.state.totalPrice)}</td>
+              <td>Tipe Pengiriman</td>
               </tr>
-              {/* <tr>
+              <tr>
                 <td colSpan="2"><TextField onChange={(e) => this.inputHandler(e,"penerima")} value={this.state.penerima} placeholder="Nama Penerima"/></td>
                 <td colSpan="2"><TextField onChange={(e) => this.inputHandler(e,"alamat")} value={this.state.alamat} placeholder="Alamat"/></td>
                 <td colSpan="1"><TextField onChange={(e) => this.inputHandler(e,"noTelp")} value={this.state.noTelp} placeholder="No. Telp"/></td>
-              </tr> */}
+                <td colSpan="1">
+                  <select className="custom-text-input h-10 pl-3" value={this.state.sendCategory} onChange={(e) => this.inputHandler(e, "sendCategory")}>
+                    <option value="instant">Instant - (Total Price + Rp. 200.000,00)</option>
+                    <option value="sameday">Same Day - (Total Price + Rp. 50.000,00)</option>
+                    <option value="express">Express - (Total Price + Rp. 20.000,00)</option>
+                    <option value="economy">Economy - Free</option>
+                  </select>
+                </td>
+              </tr>
               <tr><td colSpan="5"><ButtonUI onClick={this.confirmCheckout}>Confirm</ButtonUI></td></tr>
               </> : null
               }
@@ -218,4 +261,4 @@ const mapStateToProps = (state) => {
     }
 }
 
-export default connect(mapStateToProps)(Cart)
+export default connect(mapStateToProps,{itemInCart})(Cart)

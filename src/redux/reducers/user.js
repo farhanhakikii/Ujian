@@ -11,6 +11,7 @@ const init_state = {
   errMsg: "",
   cookieChecked: false,
   searchBar: "",
+  itemInCart: 0
 };
 
 export default (state = init_state, action) => {
@@ -35,6 +36,8 @@ export default (state = init_state, action) => {
       return { ...state, cookieChecked: true };
     case "SEARCH_ITEM":
       return { ...state, cookieChecked: true, searchBar: action.payload };
+    case "ITEM_IN_CART":
+      return { ...state, cookieChecked: true, itemInCart: action.payload };
     default:
       return { ...state };
   }

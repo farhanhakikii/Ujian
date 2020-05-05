@@ -8,6 +8,7 @@ import ButtonUI from "../../components/Button/Button";
 import TextField from "../../components/TextField/TextField";
 import Axios from "axios";
 import { API_URL } from "../../../constants/API";
+import { itemInCart } from "../../../redux/actions"
 
 class ProductDetails extends React.Component {
   state = {
@@ -39,6 +40,7 @@ class ProductDetails extends React.Component {
         .then(res => {
           console.log(res)
           swal("Add to cart", "Your item has been added to your cart", "success");
+          this.props.itemInCart(this.props.user.id)
         })
         .catch(err => {
           console.log(err)
@@ -52,6 +54,7 @@ class ProductDetails extends React.Component {
           .then((res) => {
             console.log(res);
             swal("Add to cart", "Your item has been added to your cart", "success");
+            this.props.itemInCart(this.props.user.id)
           })
           .catch((err) => {
             console.log(err);
@@ -121,4 +124,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-export default connect(mapStateToProps)(ProductDetails);
+export default connect(mapStateToProps,{itemInCart})(ProductDetails);
