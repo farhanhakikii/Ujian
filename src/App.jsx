@@ -16,6 +16,7 @@ import { userKeepLogin, cookieChecker } from "./redux/actions";
 import NotFound from "./views/screens/User/NotFound";
 import History from "./views/screens/User/History";
 import Payment from "./views/screens/Admin/Payment";
+import Report from "./views/screens/Admin/Report";
 
 const cookieObj = new Cookie();
 
@@ -36,11 +37,13 @@ class App extends React.Component {
       return <>
       <Route exact path="/admin/dashboard" component={AdminDashboard} />;
       <Route exact path="/admin/payment" component={Payment} />;
+      <Route exact path="/admin/report" component={Report} />;
       </>
     }else if(this.props.user.role === "user"){
       return <>
       <Route exact path="/admin/dashboard" component={NotFound} />;
       <Route exact path="/admin/payment" component={NotFound} />;
+      <Route exact path="/admin/report" component={NotFound} />;
       </>
     }
   };
